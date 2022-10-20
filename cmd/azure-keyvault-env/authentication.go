@@ -87,7 +87,7 @@ func createMtlsClient(clientCertDir string) (*http.Client, error) {
 	return client, nil
 }
 
-func getCredentials(useAuthService bool, authServiceAddress string, authServiceValidationAddress string, clientCertDir string) (credentialprovider.AzureKeyVaultCredentials, error) {
+func getCredentials(useAuthService bool, authServiceAddress string, authServiceValidationAddress string, clientCertDir string, timeout int) (credentialprovider.AzureKeyVaultCredentials, error) {
 	if useAuthService {
 		startupCACert, err := ioutil.ReadFile(path.Join(clientCertDir, "ca.crt"))
 		if err != nil {
@@ -99,7 +99,7 @@ func getCredentials(useAuthService bool, authServiceAddress string, authServiceV
 
 		stale := false
 		valClient := &http.Client{
-			Timeout: time.Second * 10,
+			Timeout: time.Second * time.Duration(timeout),
 		}
 		valRes, err := valClient.Get(validationUrl)
 		if err != nil {

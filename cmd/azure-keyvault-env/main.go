@@ -58,6 +58,7 @@ type injectorConfig struct {
 	authServiceSecret            string
 	signatureB64                 string
 	pubKeyBase64                 string
+	timeout                      int
 }
 
 var config injectorConfig
@@ -133,6 +134,7 @@ func initConfig() {
 	viper.SetDefault("env_injector_skip_args_validation", false)
 	viper.SetDefault("env_injector_log_level", "info")
 	viper.SetDefault("env_injector_log_format", "fmt")
+	viper.SetDefault("env_injector_timeout", 10)
 
 	viper.AutomaticEnv()
 }
@@ -201,6 +203,7 @@ func main() {
 		retryTimes:             viper.GetInt("env_injector_retries"),
 		waitTimeBetweenRetries: viper.GetInt("env_injector_wait_before_retry"),
 		skipArgsValidation:     viper.GetBool("env_injector_skip_args_validation"),
+		timeout:                viper.GetInt("env_injector_timeout"),
 	}
 
 	requiredEnvVars := map[string]string{
@@ -253,12 +256,12 @@ func main() {
 		klog.InfoS("found original container command", "cmd", origCommand, "args", origArgs)
 	}
 
-	creds, err := getCredentials(config.useAuthService, config.authServiceAddress, config.authServiceValidationAddress, config.clientCertDir)
+	creds, err := getCredentials(config.useAuthService, config.authServiceAddress, config.authServiceValidationAddress, config.clientCertDir, config.timeout)
 
 	if err != nil {
 		klog.V(4).InfoS("failed to get credentials, will retry", "retryTimes", config.retryTimes)
 		err = retry(config.retryTimes, time.Second*time.Duration(config.waitTimeBetweenRetries), func() error {
-			creds, err = getCredentials(config.useAuthService, config.authServiceAddress, config.authServiceValidationAddress, config.clientCertDir)
+			creds, err = getCredentials(config.useAuthService, config.authServiceAddress, config.authServiceValidationAddress, config.clientCertDir, config.timeout)
 			if err != nil {
 				return err
 			}
